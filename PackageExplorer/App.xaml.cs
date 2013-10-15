@@ -42,12 +42,21 @@ namespace PackageExplorer
 
         private async void Application_Startup(object sender, StartupEventArgs e)
         {
+            bool isFirstTime = Settings.Default.IsFirstTime;
             MigrateSettings();
 
             var window = Container.GetExportedValue<MainWindow>();
             window.Show();
 
-            CheckWindows8AndDisplayUpsellDialog();
+            // only display this notice *once*.
+            if (isFirstTime)
+            {
+                DisplayEndOfSupportDialog();
+            }
+            else
+            {
+                CheckWindows8AndDisplayUpsellDialog();
+            }
 
             if (e.Args.Length > 0)
             {
@@ -93,6 +102,27 @@ namespace PackageExplorer
                     await LoadFile(window, file);
                     return;
                 }
+            }
+        }
+
+        private void DisplayEndOfSupportDialog()
+        {
+            IUIServices uiServices = Container.GetExportedValue<IUIServices>();
+
+            bool accepted = uiServices.Confirm(
+                "Important Notice",
+                "It looks like you installed this application from http://nuget.codeplex.com. I have decided to move it permanently to http://npe.codeplex.com." + 
+                Environment.NewLine + 
+                Environment.NewLine + 
+                "Thus I strongly encourage you to uninstall it now and reinstall from http://npe.codeplex.com. Otherwise, you will not receive any future update. This is the final notice." +
+                Environment.NewLine + 
+                Environment.NewLine +
+                "Do you want to do it now?",
+                isWarning: true);
+
+            if (accepted)
+            {
+                Process.Start("http://npe.codeplex.com");
             }
         }
 
